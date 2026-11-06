@@ -1,0 +1,45 @@
+name: Смоук-тесты
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Тесты
+        uses: actions/checkout@v4
+
+      - name: Портал
+        uses: actions/checkout@v4
+        with:
+          repository: whpjf/events-portal
+          path: events-portal
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Зависимости
+        run: pip install -r events-portal/portal/requirements.txt -r requirements.txt
+
+      - name: Версия Chrome
+        run: google-chrome --version
+
+      - name: Смоук-тесты
+        env:
+          PORTAL_DIR: ${{ github.workspace }}/events-portal/portal
+        run: python -m pytest -m smoke -v
+
+      - name: Скриншоты и журнал при падении
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed
+          path: |
+            failed
+            server.log
